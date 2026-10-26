@@ -897,7 +897,7 @@
     rangeX: 0.55, rangeFwd: 0.38, rangeBack: 0.3,
   };
   function gravityAt(t) {
-    return 1.5 + 2.3 * clamp(t / 60, 0, 1) + 1.3 * clamp((t - 60) / 60, 0, 1);
+    return 0.5 + 2.2 * clamp(t / 60, 0, 1) + 2.4 * clamp((t - 60) / 60, 0, 1);
   }
 
   const st = {
@@ -1053,8 +1053,9 @@
 
   function startPlay() {
     st.mode = 'play';
-    st.tx = rand(-0.02, 0.02);
-    st.tz = rand(-0.012, 0.012);
+    // 最初の傾きは横向きにほぼ一定にする（何もしないと10〜12秒で落ちるように）
+    st.tx = (Math.random() < 0.5 ? -1 : 1) * rand(0.018, 0.022);
+    st.tz = rand(-0.005, 0.005);
     sound.unlock();
     sound.go();
     setHint('ドラッグで手を動かそう', false);
@@ -1121,7 +1122,7 @@
       st.handA[ax] = a;
     }
     const g = gravityAt(t) * clamp(t / 0.6, 0, 1);
-    const amp = 0.02 + 0.08 * clamp(t / 60, 0, 1);
+    const amp = 0.01 + 0.06 * clamp(t / 60, 0, 1);
     const p = st.noise;
     const nx = amp * (Math.sin(1.7 * t + p[0]) + 0.6 * Math.sin(3.3 * t + p[1]) + 0.35 * Math.sin(6.1 * t + p[2]));
     const nz = amp * (Math.sin(1.3 * t + p[3]) + 0.6 * Math.sin(2.9 * t + p[4]) + 0.35 * Math.sin(5.7 * t + p[5]));
