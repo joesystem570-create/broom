@@ -887,9 +887,9 @@
   // ===== ゲームの状態 =====
   const PH = {
     k: 1.08,          // ほうきの慣性で決まる係数（m*l/I）
-    damp: 0.35,
-    zGrav: 0.65,      // 奥行き方向は見えにくいので倒れ方を少し穏やかにする
-    fail: 0.92,       // この角度（ラジアン）を超えたら落下
+    damp: 1.2,        // 大きいほど倒れ方がゆっくりになる
+    zGrav: 0.5,       // 奥行き方向は見えにくいので倒れ方を穏やかにする
+    fail: 1.0,        // この角度（ラジアン）を超えたら落下
     step: 1 / 240,
     handW: 32,        // 手が指の動きについてくる速さ
     handAmax: 60,
@@ -897,7 +897,7 @@
     rangeX: 0.55, rangeFwd: 0.38, rangeBack: 0.3,
   };
   function gravityAt(t) {
-    return 3.4 + 4.2 * clamp(t / 45, 0, 1) + 1.8 * clamp((t - 45) / 60, 0, 1);
+    return 1.8 + 2.7 * clamp(t / 60, 0, 1) + 1.5 * clamp((t - 60) / 60, 0, 1);
   }
 
   const st = {
@@ -1121,7 +1121,7 @@
       st.handA[ax] = a;
     }
     const g = gravityAt(t) * clamp(t / 0.6, 0, 1);
-    const amp = 0.05 + 0.22 * clamp(t / 40, 0, 1);
+    const amp = 0.03 + 0.1 * clamp(t / 60, 0, 1);
     const p = st.noise;
     const nx = amp * (Math.sin(1.7 * t + p[0]) + 0.6 * Math.sin(3.3 * t + p[1]) + 0.35 * Math.sin(6.1 * t + p[2]));
     const nz = amp * (Math.sin(1.3 * t + p[3]) + 0.6 * Math.sin(2.9 * t + p[4]) + 0.35 * Math.sin(5.7 * t + p[5]));
@@ -1261,15 +1261,15 @@
 
   function startAttack(t) {
     const type = chooseAttack(t);
-    const lv = clamp((t - 10) / 40, 0, 1);
+    const lv = clamp((t - 10) / 50, 0, 1);
     fr.atk = {
       type, t: 0, hit: false, said: false,
       side: Math.random() < 0.6 ? 1 : -1,
       s: rand(0.36, 0.52),
-      windup: lerp(0.55, 0.36, lv),
+      windup: lerp(0.7, 0.45, lv),
       strike: 0.14,
       recover: 0.42,
-      power: (0.35 + 0.45 * lv) * rand(0.85, 1.15),
+      power: (0.2 + 0.3 * lv) * rand(0.85, 1.15),
       last: new V3(),
     };
     if (type === 'wave') {
@@ -1403,8 +1403,8 @@
       if (A.t >= A.windup + A.strike + A.recover) {
         fr.atk = null;
         fr.state = 'watch';
-        const lv = clamp((T - 10) / 45, 0, 1);
-        fr.nextAtk = T + lerp(3.0, 1.5, lv) + rand(-0.4, 0.6);
+        const lv = clamp((T - 10) / 50, 0, 1);
+        fr.nextAtk = T + lerp(3.8, 2.2, lv) + rand(-0.4, 0.6);
       }
     }
     fr.grin = damp(fr.grin, fr.state === 'attack' ? 1 : 0, 8, dt);
