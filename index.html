@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<!-- 外部への通信・インラインスクリプト・プラグインをすべて禁止（同じフォルダのファイルだけ読み込む） -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2d5844">
+<meta name="description" content="教室でほうきを手のひらに乗せて、どれだけ長くバランスをとれるかを競うブラウザゲーム。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ほうきバランス">
+<meta property="og:description" content="教室でほうきを手のひらに乗せて、どれだけ長くバランスをとれるか挑戦！">
+<meta name="twitter:card" content="summary">
+<!-- 公開URLが決まったら、下の og:image の「ユーザー名」「リポジトリ名」を書き換えてコメントを外し、
+     上の twitter:card を summary_large_image に変えると、Xで画像つきカードになります（og:image は絶対URLが必要）
+<meta property="og:image" content="https://ユーザー名.github.io/リポジトリ名/ogp.png">
+-->
+<title>ほうきバランス</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232d5844'/%3E%3Cpath d='M30 58h4V22h-4z' fill='%233a78c2'/%3E%3Cpath d='M20 6h24l-4 16H24z' fill='%23c9965a'/%3E%3Crect x='22' y='20' width='20' height='5' rx='1' fill='%23d8452e'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script src="vendor/three.min.js" defer></script>
+<script src="game.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <main id="stage">
+    <canvas id="view" aria-label="教室で手のひらにほうきを乗せている主観視点の画面"></canvas>
+
+    <!-- プレイ中の表示 -->
+    <div id="hud" class="hidden">
+      <div class="timer"><span id="timeVal">0.00</span><small>秒</small></div>
+      <p class="hud-best">ベスト <span id="hudBest">0.00</span>秒</p>
+      <div id="gauge" class="gauge" aria-hidden="true"><div class="gauge-ring"></div><div id="gaugeDot" class="gauge-dot"></div></div>
+      <p id="banner" class="banner"></p>
+      <p id="hint" class="hint"></p>
+    </div>
+
+    <div id="bubble" class="bubble hidden" aria-live="polite"><span id="bubbleText"></span></div>
+
+    <button id="btnMute" class="btn-mute" type="button" aria-label="音を消す">🔊</button>
+
+    <!-- タイトル -->
+    <section id="titleScreen" class="screen screen-title">
+      <div class="logo">
+        <p class="logo-sub">そうじの時間の</p>
+        <h1 class="logo-main"><span>ほうき</span><span>バランス</span></h1>
+      </div>
+      <div class="title-bottom">
+        <div class="board">
+          <h2>あそびかた</h2>
+          <ol>
+            <li><b>ドラッグ</b>で手を動かして、ほうきを落とさないようにしよう</li>
+            <li>ほうきが<b>倒れそうな方向へ</b>手を動かすのがコツ</li>
+            <li><b>5秒</b>で友達が近づいてくる…<b>10秒</b>で邪魔してくる！</li>
+          </ol>
+          <p class="board-note">PC：マウスでドラッグ ／ 矢印キー・WASD</p>
+        </div>
+        <p class="title-best">自己ベスト <span id="titleBest">--</span> 秒</p>
+        <button id="btnStart" class="btn btn-main" type="button">スタート</button>
+      </div>
+    </section>
+
+    <!-- 一時停止 -->
+    <section id="pauseScreen" class="screen screen-pause hidden">
+      <p class="pause-title">一時停止中</p>
+      <button id="btnResume" class="btn btn-main" type="button">つづける</button>
+    </section>
+
+    <!-- リザルト -->
+    <section id="resultScreen" class="screen screen-result hidden">
+      <div class="result-card">
+        <p class="result-label">記録</p>
+        <p class="result-time"><span id="resTime">0.00</span><small>秒</small></p>
+        <p id="resNew" class="result-new hidden">自己ベスト更新！</p>
+        <p class="result-rank">称号：<span id="resRank"></span></p>
+        <p id="resComment" class="result-comment"></p>
+        <p class="result-best">自己ベスト <span id="resBest">0.00</span> 秒</p>
+        <div class="result-buttons">
+          <button id="btnRetry" class="btn btn-main" type="button">もう一回</button>
+          <a id="btnShare" class="btn btn-x" href="https://x.com/intent/tweet" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Xでシェア
+          </a>
+          <a id="btnSupport" class="btn btn-support" href="https://ofuse.me/0c3683d9" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 21.2s-7.1-4.5-9.6-8.6C.5 9.4 2 5.3 5.8 4.9c2.3-.3 4.3 1 6.2 3.1 1.9-2.1 3.9-3.4 6.2-3.1 3.8.4 5.3 4.5 3.4 7.7-2.5 4.1-9.6 8.6-9.6 8.6z"/></svg>
+            応援する
+          </a>
+        </div>
+        <button id="btnTitle" class="btn-link" type="button">タイトルへ</button>
+      </div>
+    </section>
+
+    <div class="rotate-notice"><p>スマホを<b>縦向き</b>にして遊んでね</p></div>
+    <p id="fatal" class="fatal hidden"></p>
+    <noscript><p class="fatal">このゲームを遊ぶには JavaScript を有効にしてください。</p></noscript>
+  </main>
+</div>
+</body>
+</html>
